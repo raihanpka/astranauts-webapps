@@ -9,50 +9,50 @@ Panduan lengkap untuk setup database Firestore untuk aplikasi SATRIA Credit Risk
 ### 1. Firebase Project Setup
 
 1. **Buat Firebase Project**
-   \`\`\`bash
+   ```bash
    # Kunjungi https://console.firebase.google.com
    # Klik "Add project"
    # Ikuti wizard setup
-   \`\`\`
+   ```
 
 2. **Enable Firestore Database**
-   \`\`\`bash
+   ```bash
    # Di Firebase Console:
    # Build > Firestore Database > Create database
    # Pilih "Start in test mode" untuk development
-   \`\`\`
+   ```
 
 3. **Enable Firebase Storage**
-   \`\`\`bash
+   ```bash
    # Di Firebase Console:
    # Build > Storage > Get started
-   \`\`\`
+   ```
 
 ### 2. Service Account Setup
 
 1. **Generate Service Account Key**
-   \`\`\`bash
+   ```bash
    # Firebase Console > Project Settings > Service Accounts
    # Klik "Generate new private key"
    # Download file JSON
-   \`\`\`
+   ```
 
 2. **Setup Environment Variables**
-   \`\`\`env
+   ```env
    FIRESTORE_PROJECT_ID=your-project-id
    FIRESTORE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
    FIRESTORE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
-   \`\`\`
+   ```
 
 ### 3. Security Rules Setup
 
-Copy rules dari \`database/firestore.rules\` ke Firebase Console.
+Copy rules dari `database/firestore.rules` ke Firebase Console.
 
 ## 📊 Database Schema
 
 ### Collections Overview
 
-\`\`\`
+```
 firestore/
 ├── applications/          # Credit applications
 ├── companies/            # Company profiles
@@ -62,13 +62,13 @@ firestore/
 ├── systemStats/          # System statistics
 ├── chatHistory/          # Chat conversations
 └── notifications/        # System notifications
-\`\`\`
+```
 
 ## 🔄 Migration Scripts
 
 Jalankan migration scripts untuk setup initial data:
 
-\`\`\`bash
+```bash
 # Install Firebase CLI
 npm install -g firebase-tools
 
@@ -77,11 +77,8 @@ firebase login
 
 # Run migrations
 npm run db:migrate
-\`\`\`
+```
 
 ## 📝 Detailed Schema
 
-Lihat file individual di folder \`database/schemas/\` untuk detail lengkap setiap collection.
-\`\`\`
-
-Sekarang buat struktur database yang detail:
+Lihat file individual di folder `database/schemas/` untuk detail lengkap setiap collection.

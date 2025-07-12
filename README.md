@@ -19,7 +19,7 @@ SATRIA (Sistem Analisis Risiko Kredit Terintegrasi dan Adaptif) adalah platform 
 
 ### 1. Installation
 
-\`\`\`bash
+```bash
 # Clone repository
 git clone https://github.com/your-org/satria-credit-risk.git
 cd satria-credit-risk
@@ -28,18 +28,18 @@ cd satria-credit-risk
 npm install
 # atau
 yarn install
-\`\`\`
+```
 
 ### 2. Environment Setup
 
 Copy file environment example:
-\`\`\`bash
+```bash
 cp .env.example .env.local
-\`\`\`
+```
 
 Edit `.env.local` dengan konfigurasi Anda:
 
-\`\`\`env
+```env
 # Application
 NEXT_PUBLIC_APP_NAME=SATRIA
 NEXT_PUBLIC_APP_VERSION=1.0.0
@@ -62,7 +62,7 @@ GEMINI_API_KEY=your-gemini-api-key
 # External APIs
 NEXT_PUBLIC_OCR_API_URL=https://api.ocr-service.com
 NEXT_PUBLIC_SENTIMENT_API_URL=https://api.sentiment-service.com
-\`\`\`
+```
 
 ### 3. Cloudflare R2 Setup
 
@@ -80,12 +80,12 @@ NEXT_PUBLIC_SENTIMENT_API_URL=https://api.sentiment-service.com
 #### Langkah 2: Buat Bucket
 
 1. **Buat Bucket Baru**
-   \`\`\`bash
+   ```bash
    # Di Cloudflare Dashboard > R2 Object Storage
    # Klik "Create bucket"
    # Nama bucket: satria-documents
    # Region: Automatic (recommended)
-   \`\`\`
+   ```
 
 2. **Konfigurasi Bucket**
    - **Bucket name**: `satria-documents`
@@ -95,10 +95,10 @@ NEXT_PUBLIC_SENTIMENT_API_URL=https://api.sentiment-service.com
 #### Langkah 3: Generate API Keys
 
 1. **Buat R2 Token**
-   \`\`\`bash
+   ```bash
    # Di Cloudflare Dashboard > R2 Object Storage > Manage R2 API tokens
    # Klik "Create API token"
-   \`\`\`
+   ```
 
 2. **Konfigurasi Token**
    - **Token name**: `satria-r2-token`
@@ -109,32 +109,32 @@ NEXT_PUBLIC_SENTIMENT_API_URL=https://api.sentiment-service.com
    - **Bucket resources**: Include specific bucket > `satria-documents`
 
 3. **Simpan Credentials**
-   \`\`\`env
+   ```env
    CLOUDFLARE_R2_ACCESS_KEY_ID=your-access-key-id
    CLOUDFLARE_R2_SECRET_ACCESS_KEY=your-secret-access-key
    CLOUDFLARE_R2_ENDPOINT=https://your-account-id.r2.cloudflarestorage.com
-   \`\`\`
+   ```
 
 #### Langkah 4: Setup Custom Domain (Opsional)
 
 1. **Buat Custom Domain**
-   \`\`\`bash
+   ```bash
    # Di R2 bucket settings > Custom domains
    # Tambahkan domain: files.satria.com
-   \`\`\`
+   ```
 
 2. **Update Environment**
-   \`\`\`env
+   ```env
    NEXT_PUBLIC_CLOUDFLARE_R2_PUBLIC_URL=https://files.satria.com
-   \`\`\`
+   ```
 
 ### 4. Run Development Server
 
-\`\`\`bash
+```bash
 npm run dev
 # atau
 yarn dev
-\`\`\`
+```
 
 Buka [http://localhost:3000](http://localhost:3000) di browser.
 
@@ -142,7 +142,7 @@ Buka [http://localhost:3000](http://localhost:3000) di browser.
 
 ### Storage Architecture
 
-\`\`\`
+```
 SATRIA Application
 ├── Frontend (Next.js)
 │   ├── File Upload Component
@@ -160,7 +160,7 @@ SATRIA Application
     ├── OCR Service (SARANA)
     ├── Credit Scoring (PRABU)
     └── Sentiment Analysis (SETIA)
-\`\`\`
+```
 
 ### File Upload Flow
 
@@ -181,7 +181,7 @@ SATRIA Application
 
 ## 📁 Project Structure
 
-\`\`\`
+```
 satria-credit-risk/
 ├── app/                    # Next.js App Router
 │   ├── api/               # API Routes
@@ -203,12 +203,12 @@ satria-credit-risk/
 ├── public/              # Static assets
 ├── .env.example        # Environment variables template
 └── README.md           # This file
-\`\`\`
+```
 
 ## 🗄️ Database Schema
 
 ### Application Table
-\`\`\`typescript
+```typescript
 interface Application {
   id: string
   companyName: string
@@ -221,10 +221,10 @@ interface Application {
   createdAt: Date
   updatedAt: Date
 }
-\`\`\`
+```
 
 ### File Metadata
-\`\`\`typescript
+```typescript
 interface FileMetadata {
   fileName: string
   fileSize: number
@@ -232,12 +232,12 @@ interface FileMetadata {
   uploadedAt: Date
   fileUrl: string
 }
-\`\`\`
+```
 
 ## 🔌 API Endpoints
 
 ### File Upload
-\`\`\`typescript
+```typescript
 POST /api/upload
 Content-Type: multipart/form-data
 
@@ -256,10 +256,10 @@ Response:
   }
   error?: string
 }
-\`\`\`
+```
 
 ### Applications
-\`\`\`typescript
+```typescript
 // Get all applications
 GET /api/applications
 
@@ -276,10 +276,10 @@ Body: Partial<ApplicationData>
 
 // Delete application
 DELETE /api/applications/[id]
-\`\`\`
+```
 
 ### System Statistics
-\`\`\`typescript
+```typescript
 GET /api/stats
 
 Response:
@@ -293,12 +293,12 @@ Response:
     lastUpdated: Date
   }
 }
-\`\`\`
+```
 
 ## 🧪 Testing
 
 ### Unit Tests
-\`\`\`bash
+```bash
 # Run all tests
 npm run test
 
@@ -307,46 +307,46 @@ npm run test:watch
 
 # Run tests with coverage
 npm run test:coverage
-\`\`\`
+```
 
 ### E2E Tests
-\`\`\`bash
+```bash
 # Run end-to-end tests
 npm run test:e2e
-\`\`\`
+```
 
 ### Manual Testing
 
 1. **File Upload Testing**
-   \`\`\`bash
+   ```bash
    # Test different file types
    - PDF documents ✓
    - Image files (JPG, PNG) ✓
    - Office documents (DOC, XLS) ✓
    - Large files (>10MB) ✗
    - Invalid file types ✗
-   \`\`\`
+   ```
 
 2. **API Testing**
-   \`\`\`bash
+   ```bash
    # Test API endpoints
    curl -X POST http://localhost:3000/api/applications \
      -H "Content-Type: application/json" \
      -d '{"companyName": "Test Company", ...}'
-   \`\`\`
+   ```
 
 ## 📦 Build & Deploy
 
 ### Development Build
-\`\`\`bash
+```bash
 npm run build
 npm run start
-\`\`\`
+```
 
 ### Production Deployment
 
 #### Vercel Deployment
-\`\`\`bash
+```bash
 # Install Vercel CLI
 npm i -g vercel
 
@@ -357,10 +357,10 @@ vercel --prod
 vercel env add CLOUDFLARE_R2_ACCESS_KEY_ID
 vercel env add CLOUDFLARE_R2_SECRET_ACCESS_KEY
 # ... add all required env vars
-\`\`\`
+```
 
 #### Docker Deployment
-\`\`\`dockerfile
+```dockerfile
 # Dockerfile
 FROM node:18-alpine
 
@@ -373,20 +373,20 @@ RUN npm run build
 
 EXPOSE 3000
 CMD ["npm", "start"]
-\`\`\`
+```
 
-\`\`\`bash
+```bash
 # Build and run Docker container
 docker build -t satria-app .
 docker run -p 3000:3000 --env-file .env satria-app
-\`\`\`
+```
 
 ## 🔧 Configuration
 
 ### Cloudflare R2 Advanced Configuration
 
 #### CORS Setup
-\`\`\`javascript
+```javascript
 // R2 Bucket CORS configuration
 {
   "corsRules": [
@@ -398,10 +398,10 @@ docker run -p 3000:3000 --env-file .env satria-app
     }
   ]
 }
-\`\`\`
+```
 
 #### Lifecycle Rules
-\`\`\`javascript
+```javascript
 // Auto-delete temporary files after 30 days
 {
   "lifecycleRules": [
@@ -417,12 +417,12 @@ docker run -p 3000:3000 --env-file .env satria-app
     }
   ]
 }
-\`\`\`
+```
 
 ### Performance Optimization
 
 1. **File Compression**
-   \`\`\`typescript
+   ```typescript
    // Compress images before upload
    import imageCompression from 'browser-image-compression'
    
@@ -430,20 +430,20 @@ docker run -p 3000:3000 --env-file .env satria-app
      maxSizeMB: 1,
      maxWidthOrHeight: 1920
    })
-   \`\`\`
+   ```
 
 2. **Parallel Uploads**
-   \`\`\`typescript
+   ```typescript
    // Upload multiple files in parallel
    const uploadPromises = files.map(file => uploadFileToR2(file))
    const results = await Promise.all(uploadPromises)
-   \`\`\`
+   ```
 
 3. **CDN Integration**
-   \`\`\`env
+   ```env
    # Use Cloudflare CDN for faster file delivery
    NEXT_PUBLIC_CLOUDFLARE_R2_PUBLIC_URL=https://cdn.satria.com
-   \`\`\`
+   ```
 
 ## 🔒 Security Best Practices
 
@@ -464,35 +464,35 @@ docker run -p 3000:3000 --env-file .env satria-app
 ### Common Issues
 
 1. **Upload Fails with 403 Error**
-   \`\`\`bash
+   ```bash
    # Check R2 credentials and permissions
    # Verify bucket name and endpoint URL
    # Ensure CORS is properly configured
-   \`\`\`
+   ```
 
 2. **Files Not Accessible**
-   \`\`\`bash
+   ```bash
    # Check public URL configuration
    # Verify custom domain setup
    # Ensure bucket is publicly readable
-   \`\`\`
+   ```
 
 3. **Large File Upload Timeout**
-   \`\`\`bash
+   ```bash
    # Increase timeout in next.config.js
    # Use multipart upload for large files
    # Implement upload resumption
-   \`\`\`
+   ```
 
 ### Debug Mode
-\`\`\`env
+```env
 # Enable detailed logging
 DEBUG=true
 API_LOGGING=true
-\`\`\`
+```
 
 ### Monitoring
-\`\`\`typescript
+```typescript
 // Add monitoring for upload success/failure rates
 const uploadMetrics = {
   totalUploads: 0,
@@ -500,7 +500,7 @@ const uploadMetrics = {
   failedUploads: 0,
   averageUploadTime: 0
 }
-\`\`\`
+```
 
 ## 🤝 Contributing
 
@@ -519,12 +519,6 @@ const uploadMetrics = {
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
-
-## 📞 Support
-
-- Email: support@satria.com
-- Documentation: [docs.satria.com](https://docs.satria.com)
-- Issues: [GitHub Issues](https://github.com/your-org/satria-credit-risk/issues)
 
 ## 🔄 Migration Notes
 
