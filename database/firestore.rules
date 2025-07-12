@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // System configuration - read only for authenticated users
+    match /systemConfig/{document} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        request.auth.token.role == 'admin';
+    }
+    
+    // User roles - read only
+    match /userRoles/{document} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        request.auth.token.role == 'admin';
+    }
+    
+    // Applications - full CRUD for authenticated users
+    match /applications/{applicationId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && 
+        validateApplicationData(request.resource.data);
+      allow update: if request.auth != null && 
+        validateApplicationData(request.resource.data) &&
+        request.auth.uid == resource.data.createdBy;
+      allow delete: if request.auth != null && 
+        request.auth.token.role in ['admin', 'analyst'];
+    }
+    
+    // Companies - read for all, write for analysts and admins
+    match /companies/{companyId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        request.auth.token.role in ['admin', 'analyst'];
+    }
+    
+    // Documents - restricted access
+    match /documents/{documentId} {
+      allow read: if request.auth != null && 
+        (request.auth.uid == resource.data.uploadedBy ||
+         request.auth.token.role in ['admin', 'analyst']);
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.uploadedBy;
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.uploadedBy ||
+         request.auth.token.role in ['admin', 'analyst']);
+      allow delete: if request.auth != null && 
+        request.auth.token.role == 'admin';
+    }
+    
+    // Chat history - user specific
+    match /chatHistory/{userId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == userId;
+    }
+    
+    // System stats - read only for authenticated users
+    match /systemStats/{document} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        request.auth.token.role == 'admin';
+    }
+    
+    // Helper functions
+    function validateApplicationData(data) {
+      return data.keys().hasAll(['companyName', 'applicantName', 'email', 'phone']) &&
+        data.email is string &&
+        data.email.matches('.*@.*\\..*') &&
+        data.amount is number &&
+        data.amount > 0;
+    }
+  }
+}
