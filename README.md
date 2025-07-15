@@ -1,6 +1,18 @@
 # SATRIA - Credit Risk Analysis System
 
-SATRIA (Sistem Analisis Risiko Kredit Terintegrasi dan Adaptif) adalah platform analisis risiko kredit modern yang mengintegrasikan teknologi AI untuk memberikan penilaian kredit yang akurat dan komprehensif. Sistem ini menggunakan **Firestore** sebagai database utama dan **Cloudflare R2** untuk penyimpanan file yang aman dan efisien.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-satria--sanf.vercel.app-brightgreen?style=for-the-badge&logo=vercel)](https://satria-sanf.vercel.app)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange?style=for-the-badge&logo=firebase)](https://firebase.google.com/)
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/)
+
+SATRIA (Sistem Analisis Risiko Kredit Terintegrasi dan Adaptif) adalah platform analisis risiko kredit modern yang mengintegrasikan teknologi AI untuk memberikan penilaian kredit yang akurat dan komprehensif. Sistem ini menggunakan **Firestore** sebagai database utama dan **Cloudflare R2** untuk penyimpanan file yang aman dan efisien. 
+
+## 🌐 Demo Online
+
+**🚀 Aplikasi SATRIA sudah dapat diakses di:** [**satria-sanf.vercel.app**](https://satria-sanf.vercel.app)
+
+> Platform kredit risk analysis yang terintegrasi dengan teknologi AI untuk analisis dokumen keuangan secara otomatis dan real-time dashboard monitoring.
 
 ## 🚀 Fitur Utama
 
@@ -8,6 +20,18 @@ SATRIA (Sistem Analisis Risiko Kredit Terintegrasi dan Adaptif) adalah platform 
 - **PRABU**: Credit Scoring AI dengan M-Score dan Altman Z-Score
 - **SETIA**: Sentiment Analysis & News Monitoring
 - **TARA**: Dashboard & Chatbot untuk interaksi pengguna
+
+## 📸 Showcase Aplikasi
+
+### 🏠 Landing Page
+![Landing Page](public/landing-page.png)
+*Halaman utama SATRIA dengan desain modern dan informasi lengkap tentang platform analisis risiko kredit*
+
+### 📈 Applications Dashboard
+![Applications Dashboard](public/images/dashboard.png)
+*Tabel lengkap semua pengajuan kredit dengan status, risk assessment, dan detail analisis per aplikasi*
+
+**Project masih dalam tahap pengembangan dan belum sempurna!**
 
 ## 🛠️ Teknologi
 
@@ -185,44 +209,6 @@ Setup CORS policy untuk bucket R2:
 - Bantuan untuk pengguna
 - Analisis dokumen
 
-## 🚀 Deployment
-
-### Vercel (Recommended)
-\`\`\`bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy to Vercel
-vercel --prod
-
-# Set environment variables
-### Vercel (Recommended)
-{
-  collectionGroup: "applications",
-  fields: [
-    { fieldPath: "status", order: "ASCENDING" },
-    { fieldPath: "createdAt", order: "DESCENDING" }
-  ]
-}
-
-{
-  collectionGroup: "applications", 
-  fields: [
-    { fieldPath: "companyName", order: "ASCENDING" },
-    { fieldPath: "createdAt", order: "DESCENDING" }
-  ]
-}
-
-// Documents collection
-{
-  collectionGroup: "documents",
-  fields: [
-    { fieldPath: "applicationId", order: "ASCENDING" },
-    { fieldPath: "uploadedAt", order: "DESCENDING" }
-  ]
-}
-\`\`\`
-
 ### Security Best Practices
 
 1. **Firestore Security Rules**
@@ -249,49 +235,4 @@ NODE_ENV=development
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
-## 🎯 Roadmap
-
-- [x] **Firestore Integration**: Complete database setup
-- [x] **Multi-step Form**: Working form with validation
-- [x] **File Upload**: R2 integration with metadata
-- [x] **Real-time Dashboard**: Live data updates
-- [ ] **Authentication**: User login system
-- [ ] **Advanced Analytics**: Enhanced reporting
-- [ ] **Mobile App**: React Native application
-- [ ] **API Documentation**: OpenAPI/Swagger docs
-- [ ] **Monitoring**: Application performance monitoring
-
----
-
-8. **✅ Type Safety**: Full TypeScript implementation
-
-### 🚀 **Cara Menggunakan:**
-
-1. **Setup Environment Variables** sesuai `.env.example`
-2. **Konfigurasi Firebase** dan buat Firestore database
-3. **Setup Cloudflare R2** untuk file storage
-4. **Run Development Server**: `npm run dev`
-5. **Test Form**: Akses `/form` dan coba submit data
-6. **Check Dashboard**: Lihat data di `/dashboard`
-1. **Firestore Permission Denied**
-   ```bash
-   # Check security rules
-   # Ensure proper authentication
-   # Verify service account permissions
-   ```
-
-2. **File Upload Fails**
-   ```bash
-   # Check R2 credentials and permissions
-   # Verify bucket name and endpoint URL
-   # Ensure CORS is properly configured
-   ```
-
-3. **Form Submission Errors**
-   ```bash
-   # Check form validation
-   # Verify API endpoint is working
-   # Check Firestore connection
-   ```
-
-### Debug Mode
+Built with ❤️ by **The Beyonders** | © 2025
