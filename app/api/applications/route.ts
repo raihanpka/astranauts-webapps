@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/database"
+import { getApplicationsServer, createApplicationServer } from "@/lib/firestore-operations"
 
 export async function GET() {
   try {
-    const applications = await db.getApplications()
+    const applications = await getApplicationsServer()
 
     return NextResponse.json({
       success: true,
@@ -45,21 +45,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Buat aplikasi baru
-    const application = await db.createApplication(body)
-
-    // Simulasi proses analisis (dalam production, ini akan memanggil AI services)
-    setTimeout(async () => {
-      const analysisResults = {
-        riskScore: Math.random() * 100,
-        riskLevel: ["low", "medium", "high"][Math.floor(Math.random() * 3)] as "low" | "medium" | "high",
-        confidenceRate: 75 + Math.random() * 20,
-        status: "approved" as const,
-        processedAt: new Date(),
-      }
-
-      await db.updateApplication(application.id, analysisResults)
-    }, 2000)
+    // Buat aplikasi baru di Firestore
+    const application = await createApplicationServer({
+      companyName: body.companyName,
+      applicantName: body.applicantName || body.fullName,
+      email: body.email,
+      phone: body.phone,
+      position: body.position,
+      gender: body.gender,
+      operationalStability: body.operationalStability,
+      complianceLevel: body.complianceLevel,
+      expansionPlans: body.expansionPlans,
+      reputation: body.reputation,
+      financingPurpose: body.financingPurpose,
+      amount: typeof body.amount === "string" ? body.amount : Number(body.amount),
+      tenor: body.tenor,
+      financingType: body.financingType,
+      collateral: body.collateral,
+      usagePlan: body.usagePlan,
+      status: "pending",
+    })
 
     return NextResponse.json({
       success: true,

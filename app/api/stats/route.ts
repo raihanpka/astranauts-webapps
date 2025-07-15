@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
-import { db } from "@/lib/database"
+import { serverDb } from "@/lib/firestore-operations"
 
 export async function GET() {
   try {
-    const stats = await db.getSystemStats()
+    const stats = await serverDb.getSystemStats()
 
     return NextResponse.json({
       success: true,

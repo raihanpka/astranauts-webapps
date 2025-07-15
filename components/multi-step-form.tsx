@@ -22,7 +22,7 @@ import {
   type AssessmentForm,
   type CreditInfoForm,
 } from "@/lib/form-schema"
-import { saveApplication } from "@/lib/api-handlers"
+import { saveApplication } from "@/lib/client-api-handlers"
 import { generateSyntheticData } from "@/lib/utils"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -137,15 +137,35 @@ export default function MultiStepForm() {
     setIsSubmitting(true)
 
     try {
+      const personalData = personalForm.getValues()
+      const assessmentData = assessmentForm.getValues()
+      const creditData = creditForm.getValues()
+
       const formData = {
-        ...personalForm.getValues(),
-        ...assessmentForm.getValues(),
-        ...creditForm.getValues(),
-        companyName: personalForm.getValues().fullName + " Company", // Synthetic company name
-        amount: Number.parseInt(creditForm.getValues().amount),
+        // Personal info
+        companyName: personalData.fullName + " Company", // Synthetic company name
+        applicantName: personalData.fullName,
+        email: personalData.email,
+        phone: personalData.phone,
+        position: personalData.position,
+        gender: personalData.gender,
+
+        // Assessment data
+        operationalStability: assessmentData.operationalStability,
+        complianceLevel: assessmentData.complianceLevel,
+        expansionPlans: assessmentData.expansionPlans,
+        reputation: assessmentData.reputation,
+
+        // Credit info
+        financingPurpose: creditData.financingPurpose,
+        amount: creditData.amount, // Keep as string, will be converted in API
+        tenor: creditData.tenor,
+        financingType: creditData.financingType,
+        collateral: creditData.collateral,
+        usagePlan: creditData.usagePlan,
       }
 
-      await saveApplication(formData)
+      const applicationId = await saveApplication(formData)
 
       toast.success("Aplikasi berhasil disimpan dan sedang diproses!", { duration: 2000 })
 
@@ -154,6 +174,11 @@ export default function MultiStepForm() {
       assessmentForm.reset()
       creditForm.reset()
       setCurrentStep(1)
+
+      // Redirect to dashboard after successful submission
+      setTimeout(() => {
+        window.location.href = "/dashboard"
+      }, 2000)
     } catch (error) {
       console.error("Error saving application:", error)
       toast.error("Gagal menyimpan aplikasi. Silakan coba lagi.", { duration: 2000 })

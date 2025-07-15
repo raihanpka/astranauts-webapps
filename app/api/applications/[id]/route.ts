@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/database"
+import { getApplicationByIdServer, serverDb } from "@/lib/firestore-operations"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const application = await db.getApplicationById(params.id)
+    const application = await getApplicationByIdServer(params.id)
 
     if (!application) {
       return NextResponse.json({ success: false, error: "Aplikasi tidak ditemukan" }, { status: 404 })
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await request.json()
-    const application = await db.updateApplication(params.id, body)
+    const application = await serverDb.updateApplication(params.id, body)
 
     if (!application) {
       return NextResponse.json({ success: false, error: "Aplikasi tidak ditemukan" }, { status: 404 })
@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const success = await db.deleteApplication(params.id)
+    const success = await serverDb.deleteApplication(params.id)
 
     if (!success) {
       return NextResponse.json({ success: false, error: "Aplikasi tidak ditemukan" }, { status: 404 })

@@ -1,51 +1,73 @@
-// API Configuration for modular REST API integration
+// API Configuration for modular REST API integration with Google Cloud Run
 export const API_CONFIG = {
   // Base URLs for different environments
   BASE_URL: {
-    development: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000",
-    production: process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.satria.com",
-    staging: process.env.NEXT_PUBLIC_API_STAGING_URL || "https://staging-api.satria.com",
+    development:
+      process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-local-dev-url.com",
+    production:
+      process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-production-url.com",
+    staging:
+      process.env.NEXT_PUBLIC_API_STAGING_URL || "https://your-staging-url.com",
+  },
+
+  // Module-specific URLs
+  MODULE_URLS: {
+    SARANA:
+      process.env.NEXT_PUBLIC_SARANA_API_URL ||
+      "https://your-api-url.com/api/v1/sarana",
+    PRABU:
+      process.env.NEXT_PUBLIC_PRABU_API_URL ||
+      "https://your-api-url.com/api/v1/prabu",
+    SETIA:
+      process.env.NEXT_PUBLIC_SETIA_API_URL ||
+      "https://your-api-url.com/api/v1/setia",
   },
 
   // API Endpoints
   ENDPOINTS: {
     // SARANA Module (OCR & NLP)
     SARANA: {
-      OCR_UPLOAD: "/api/v1/sarana/ocr/upload",
-      DOCUMENT_PARSE: "/api/v1/sarana/document/parse",
-      EXTRACT_DATA: "/api/v1/sarana/extract",
+      OCR_UPLOAD: "/ocr/upload",
+      DOCUMENT_PARSE: "/document/parse",
+      EXTRACT_DATA: "/extract",
+      HEALTH_CHECK: "/health",
     },
 
     // PRABU Module (Credit Scoring)
     PRABU: {
-      CALCULATE_SCORE: "/api/v1/prabu/calculate",
-      M_SCORE: "/api/v1/prabu/m-score",
-      ALTMAN_Z_SCORE: "/api/v1/prabu/altman-z",
-      FINANCIAL_METRICS: "/api/v1/prabu/metrics",
+      CALCULATE_SCORE: "/calculate",
+      M_SCORE: "/m-score",
+      ALTMAN_Z_SCORE: "/altman-z",
+      FINANCIAL_METRICS: "/metrics",
+      HEALTH_CHECK: "/health",
     },
 
     // SETIA Module (Sentiment Analysis)
     SETIA: {
-      SENTIMENT_ANALYSIS: "/api/v1/setia/sentiment",
-      NEWS_MONITORING: "/api/v1/setia/news",
-      EXTERNAL_RISK: "/api/v1/setia/external-risk",
+      SENTIMENT_ANALYSIS: "/sentiment",
+      NEWS_MONITORING: "/news",
+      EXTERNAL_RISK: "/external-risk",
+      HEALTH_CHECK: "/health",
     },
 
-    // Application Management
+    // Application Management (Local API)
     APPLICATIONS: {
-      CREATE: "/api/v1/applications",
-      GET_ALL: "/api/v1/applications",
-      GET_BY_ID: "/api/v1/applications/:id",
-      UPDATE: "/api/v1/applications/:id",
-      DELETE: "/api/v1/applications/:id",
+      CREATE: "/api/applications",
+      GET_ALL: "/api/applications",
+      GET_BY_ID: "/api/applications/:id",
+      UPDATE: "/api/applications/:id",
+      DELETE: "/api/applications/:id",
     },
 
-    // Analytics & Reports
+    // Analytics & Reports (Local API)
     ANALYTICS: {
-      DASHBOARD_STATS: "/api/v1/analytics/dashboard",
-      COMPANY_ANALYSIS: "/api/v1/analytics/company/:id",
-      RISK_REPORTS: "/api/v1/analytics/risk-reports",
+      DASHBOARD_STATS: "/api/stats",
+      COMPANY_ANALYSIS: "/api/analytics/company/:id",
+      RISK_REPORTS: "/api/analytics/risk-reports",
     },
+
+    // File Upload (Local API)
+    UPLOAD: "/api/upload",
   },
 
   // Request Headers
@@ -53,13 +75,15 @@ export const API_CONFIG = {
     "Content-Type": "application/json",
     Accept: "application/json",
     "X-API-Version": "v1",
+    "User-Agent": "SATRIA-Frontend/1.0.0",
   },
 
-  // Timeout configurations
+  // Timeout configurations (longer for Cloud Run cold starts)
   TIMEOUT: {
-    DEFAULT: 30000, // 30 seconds
-    UPLOAD: 120000, // 2 minutes for file uploads
-    ANALYSIS: 60000, // 1 minute for analysis
+    DEFAULT: 60000, // 60 seconds for Cloud Run
+    UPLOAD: 300000, // 5 minutes for file uploads
+    ANALYSIS: 120000, // 2 minutes for ML analysis
+    HEALTH_CHECK: 10000, // 10 seconds for health checks
   },
 }
 
@@ -74,9 +98,23 @@ export const getBaseURL = (): string => {
   return API_CONFIG.BASE_URL[env]
 }
 
-// Build full URL
+// Get module-specific URL
+export const getModuleURL = (module: "SARANA" | "PRABU" | "SETIA"): string => {
+  return API_CONFIG.MODULE_URLS[module]
+}
+
+// Build full URL for local API
 export const buildURL = (endpoint: string): string => {
+  // For local API endpoints, use current domain
+  if (endpoint.startsWith("/api/")) {
+    return endpoint
+  }
   return `${getBaseURL()}${endpoint}`
+}
+
+// Build full URL for ML modules
+export const buildModuleURL = (module: "SARANA" | "PRABU" | "SETIA", endpoint: string): string => {
+  return `${getModuleURL(module)}${endpoint}`
 }
 
 // Replace URL parameters
@@ -86,4 +124,20 @@ export const replaceURLParams = (url: string, params: Record<string, string>): s
     finalUrl = finalUrl.replace(`:${key}`, value)
   })
   return finalUrl
+}
+
+// Health check function for ML services
+export const checkServiceHealth = async (module: "SARANA" | "PRABU" | "SETIA"): Promise<boolean> => {
+  try {
+    const url = buildModuleURL(module, API_CONFIG.ENDPOINTS[module].HEALTH_CHECK)
+    const response = await fetch(url, {
+      method: "GET",
+      headers: API_CONFIG.HEADERS,
+      signal: AbortSignal.timeout(API_CONFIG.TIMEOUT.HEALTH_CHECK),
+    })
+    return response.ok
+  } catch (error) {
+    console.error(`Health check failed for ${module}:`, error)
+    return false
+  }
 }
