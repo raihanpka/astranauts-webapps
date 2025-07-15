@@ -1,53 +1,46 @@
 // API Configuration for modular REST API integration with Google Cloud Run
 export const API_CONFIG = {
   // Base URLs for different environments
+  // Set NEXT_PUBLIC_API_BASE_URL=https://your-production-url.run.app for production
   BASE_URL: {
-    development:
-      process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-local-dev-url.com",
-    production:
-      process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-production-url.com",
-    staging:
-      process.env.NEXT_PUBLIC_API_STAGING_URL || "https://your-staging-url.com",
+    development: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080",
+    production: process.env.NEXT_PUBLIC_API_BASE_URL || "https://astranauts-mlserving-186881677532.europe-west1.run.app",
+    staging: process.env.NEXT_PUBLIC_API_STAGING_URL || "https://astranauts-mlserving-186881677532.europe-west1.run.app",
   },
 
-  // Module-specific URLs
+  // Module-specific URLs (relative paths)
+  // These will be combined with BASE_URL to form complete URLs
   MODULE_URLS: {
-    SARANA:
-      process.env.NEXT_PUBLIC_SARANA_API_URL ||
-      "https://your-api-url.com/api/v1/sarana",
-    PRABU:
-      process.env.NEXT_PUBLIC_PRABU_API_URL ||
-      "https://your-api-url.com/api/v1/prabu",
-    SETIA:
-      process.env.NEXT_PUBLIC_SETIA_API_URL ||
-      "https://your-api-url.com/api/v1/setia",
+    PRABU: "/api/v1/prabu",
+    SARANA: "/api/v1/sarana", 
+    SETIA: "/api/v1/setia",
   },
 
   // API Endpoints
   ENDPOINTS: {
     // SARANA Module (OCR & NLP)
     SARANA: {
-      OCR_UPLOAD: "/ocr/upload",
-      DOCUMENT_PARSE: "/document/parse",
-      EXTRACT_DATA: "/extract",
       HEALTH_CHECK: "/health",
+      DOCUMENT_PARSE: "/document/parse",
+      OCR_UPLOAD: "/ocr/upload",
+      EXTRACT_DATA: "/extract",
     },
 
     // PRABU Module (Credit Scoring)
     PRABU: {
-      CALCULATE_SCORE: "/calculate",
-      M_SCORE: "/m-score",
-      ALTMAN_Z_SCORE: "/altman-z",
-      FINANCIAL_METRICS: "/metrics",
       HEALTH_CHECK: "/health",
+      CALCULATE_SCORE: "/calculate",
+      ALTMAN_Z_SCORE: "/altman-z",
+      M_SCORE: "/m-score",
+      FINANCIAL_METRICS: "/metrics",
     },
 
     // SETIA Module (Sentiment Analysis)
     SETIA: {
+      HEALTH_CHECK: "/health",
       SENTIMENT_ANALYSIS: "/sentiment",
       NEWS_MONITORING: "/news",
       EXTERNAL_RISK: "/external-risk",
-      HEALTH_CHECK: "/health",
     },
 
     // Application Management (Local API)
@@ -100,7 +93,8 @@ export const getBaseURL = (): string => {
 
 // Get module-specific URL
 export const getModuleURL = (module: "SARANA" | "PRABU" | "SETIA"): string => {
-  return API_CONFIG.MODULE_URLS[module]
+  const baseUrl = getBaseURL()
+  return `${baseUrl}${API_CONFIG.MODULE_URLS[module]}`
 }
 
 // Build full URL for local API

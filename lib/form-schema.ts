@@ -41,6 +41,26 @@ export const creditInfoSchema = z.object({
   usagePlan: z.string().min(20, "Rencana penggunaan dana minimal 20 karakter"),
 })
 
+export const documentUploadSchema = z.object({
+  balanceSheet: z.any().optional(),
+  incomeStatement: z.any().optional(),
+  cashFlowStatement: z.any().optional(),
+  financialReport: z.any().optional(),
+  collateralDocument: z.any().optional(),
+})
+
+export const companyProfileSchema = z.object({
+  companyName: z.string().min(2, "Nama perusahaan minimal 2 karakter"),
+  businessType: z.string().min(1, "Pilih jenis usaha"),
+  establishedYear: z.string().min(4, "Tahun berdiri harus valid"),
+  numberOfEmployees: z.string().min(1, "Pilih jumlah karyawan"),
+  monthlyRevenue: z.string().min(1, "Pilih estimasi pendapatan bulanan"),
+  businessLocation: z.string().min(5, "Lokasi usaha minimal 5 karakter"),
+  businessDescription: z.string().min(20, "Deskripsi usaha minimal 20 karakter"),
+})
+
 export type PersonalInfoForm = z.infer<typeof personalInfoSchema>
 export type AssessmentForm = z.infer<typeof assessmentSchema>
 export type CreditInfoForm = z.infer<typeof creditInfoSchema>
+export type DocumentUploadForm = z.infer<typeof documentUploadSchema>
+export type CompanyProfileForm = z.infer<typeof companyProfileSchema>

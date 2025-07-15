@@ -1,5 +1,5 @@
 // Documents Collection Schema
-import type { FirebaseFirestore } from "firebase-admin/firestore"
+import type { Timestamp } from "firebase-admin/firestore"
 
 export interface DocumentDocument {
   // Document ID: auto-generated
@@ -30,7 +30,7 @@ export interface DocumentDocument {
     extractedText: string
     confidence: number
     structuredData: any
-    processedAt: FirebaseFirestore.Timestamp
+    processedAt: Timestamp
     processingTime: number
   }
 
@@ -38,12 +38,12 @@ export interface DocumentDocument {
   validationStatus: "pending" | "valid" | "invalid" | "requires_review"
   validationErrors?: string[]
   validatedBy?: string
-  validatedAt?: FirebaseFirestore.Timestamp
+  validatedAt?: Timestamp
 
   // System Fields
   uploadedBy: string
-  uploadedAt: FirebaseFirestore.Timestamp
-  updatedAt: FirebaseFirestore.Timestamp
+  uploadedAt: Timestamp
+  updatedAt: Timestamp
 
   // Security
   accessLevel: "public" | "internal" | "confidential"
@@ -53,7 +53,7 @@ export interface DocumentDocument {
   auditTrail: Array<{
     action: "uploaded" | "processed" | "validated" | "downloaded" | "deleted"
     userId: string
-    timestamp: FirebaseFirestore.Timestamp
+    timestamp: Timestamp
     details?: any
   }>
 }

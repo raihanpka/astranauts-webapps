@@ -22,12 +22,6 @@ Panduan lengkap untuk setup database Firestore untuk aplikasi SATRIA Credit Risk
    # Pilih "Start in test mode" untuk development
    ```
 
-3. **Enable Firebase Storage**
-   ```bash
-   # Di Firebase Console:
-   # Build > Storage > Get started
-   ```
-
 ### 2. Service Account Setup
 
 1. **Generate Service Account Key**
@@ -54,7 +48,7 @@ Copy rules dari `database/firestore.rules` ke Firebase Console.
 
 ```
 firestore/
-├── applications/          # Credit applications
+├── applications/         # Credit applications
 ├── companies/            # Company profiles
 ├── documents/            # Uploaded documents
 ├── analyses/             # Analysis results

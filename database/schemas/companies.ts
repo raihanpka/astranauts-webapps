@@ -1,5 +1,5 @@
 // Companies Collection Schema
-import type { FirebaseFirestore } from "firebase-admin/firestore"
+import type { Timestamp } from "firebase-admin/firestore"
 
 export interface CompanyDocument {
   // Document ID: company slug (e.g., "pt-andalan-niaga")
@@ -26,7 +26,7 @@ export interface CompanyDocument {
   // Business Information
   industry: string
   businessType: "PT" | "CV" | "UD" | "PD" | "FIRMA" | "FA"
-  establishedDate: FirebaseFirestore.Timestamp
+  establishedDate: Timestamp
   employeeCount: number
   annualRevenue?: number
 
@@ -39,29 +39,29 @@ export interface CompanyDocument {
     ebit: number
     marketCapitalization?: number
     sales: number
-    lastUpdated: FirebaseFirestore.Timestamp
+    lastUpdated: Timestamp
   }
 
   // Risk Profile
   riskProfile: {
     currentRiskLevel: "low" | "medium" | "high"
     riskScore: number
-    lastAssessment: FirebaseFirestore.Timestamp
+    lastAssessment: Timestamp
     factors: string[]
   }
 
   // Application History
   applicationHistory: Array<{
     applicationId: string
-    date: FirebaseFirestore.Timestamp
+    date: Timestamp
     amount: number
     status: "approved" | "rejected" | "pending"
     riskScore: number
   }>
 
   // System Fields
-  createdAt: FirebaseFirestore.Timestamp
-  updatedAt: FirebaseFirestore.Timestamp
+  createdAt: Timestamp
+  updatedAt: Timestamp
   isActive: boolean
 
   // Metadata

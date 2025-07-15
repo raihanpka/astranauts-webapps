@@ -1,5 +1,3 @@
-"use server"
-
 import { toast } from "sonner"
 import { clientDb } from "./firestore-operations"
 import { saranaService, prabuService, setiaService } from "./ml-services"

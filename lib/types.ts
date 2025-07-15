@@ -7,6 +7,14 @@ export interface CreditApplication {
   position: string
   gender: "male" | "female"
 
+  // Company information
+  businessType?: string
+  establishedYear?: string
+  numberOfEmployees?: string
+  monthlyRevenue?: string
+  businessLocation?: string
+  businessDescription?: string
+
   // Assessment data
   operationalStability: string
   complianceLevel: string
@@ -20,6 +28,13 @@ export interface CreditApplication {
   financingType: string
   collateral: string
   usagePlan: string
+
+  // Document metadata (file names for now)
+  balanceSheetName?: string | null
+  incomeStatementName?: string | null
+  cashFlowStatementName?: string | null
+  financialReportName?: string | null
+  collateralDocumentName?: string | null
 
   // System data
   status: "pending" | "approved" | "rejected" | "processing"
@@ -42,6 +57,22 @@ export interface CreditApplication {
     mScore: number
     altmanZScore: number
     calculatedAt: Date
+  }
+
+  // Extracted Financial Data from Documents
+  extractedFinancialData?: {
+    [fieldName: string]: {
+      currentYear: Array<{
+        fileName: string
+        financialMetrics: Record<string, any>
+      }>
+      previousYear: Array<{
+        fileName: string
+        financialMetrics: Record<string, any>
+      }>
+      hasIncompleteData: boolean
+      missingFields: string[]
+    }
   }
 
   sentimentAnalysis?: {

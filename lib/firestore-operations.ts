@@ -1,5 +1,3 @@
-"use server"
-
 import {
   collection,
   doc,
@@ -18,6 +16,7 @@ import {
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { adminDb } from "./firebase-admin"
+import { Timestamp as AdminTimestamp } from "firebase-admin/firestore"
 import type { CreditApplication, SystemStats, DocumentMetadata } from "./types"
 
 // Client-side Firestore operations
@@ -172,7 +171,7 @@ export async function createApplicationServer(
 ): Promise<CreditApplication> {
   try {
     const docRef = adminDb.collection("applications").doc()
-    const now = Timestamp.now()
+    const now = AdminTimestamp.now()
 
     const applicationData = {
       ...data,
@@ -236,7 +235,7 @@ export const serverDb = {
   async createApplication(data: Omit<CreditApplication, "id" | "createdAt" | "updatedAt">): Promise<CreditApplication> {
     try {
       const docRef = adminDb.collection("applications").doc()
-      const now = Timestamp.now()
+      const now = AdminTimestamp.now()
 
       const applicationData = {
         ...data,
@@ -301,7 +300,7 @@ export const serverDb = {
       const docRef = adminDb.collection("applications").doc(id)
       await docRef.update({
         ...data,
-        updatedAt: Timestamp.now(),
+        updatedAt: AdminTimestamp.now(),
       })
 
       return this.getApplicationById(id)
@@ -358,7 +357,7 @@ export const serverDb = {
   async createDocument(data: Omit<DocumentMetadata, "id" | "uploadedAt">): Promise<DocumentMetadata> {
     try {
       const docRef = adminDb.collection("documents").doc()
-      const now = Timestamp.now()
+      const now = AdminTimestamp.now()
 
       const documentData = {
         ...data,

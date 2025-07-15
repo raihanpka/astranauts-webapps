@@ -1,5 +1,3 @@
-"use server"
-
 import { buildModuleURL, API_CONFIG, checkServiceHealth } from "./api-config"
 import { toast } from "sonner"
 

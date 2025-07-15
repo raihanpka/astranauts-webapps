@@ -16,17 +16,21 @@ import { Progress } from "@/components/ui/progress"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import {
   personalInfoSchema,
+  companyProfileSchema,
   assessmentSchema,
   creditInfoSchema,
+  documentUploadSchema,
   type PersonalInfoForm,
+  type CompanyProfileForm,
   type AssessmentForm,
   type CreditInfoForm,
+  type DocumentUploadForm,
 } from "@/lib/form-schema"
-import { saveApplication } from "@/lib/client-api-handlers"
 import { generateSyntheticData } from "@/lib/utils"
 import { toast } from "sonner"
 import Link from "next/link"
 import Image from "next/image"
+import { FinancialDataDisplay } from "@/components/financial-data-display"
 
 const steps = [
   {
@@ -35,14 +39,14 @@ const steps = [
     subtitle:
       "SATRIA memulai proses analisis dengan memastikan kejelasan identitas perwakilan perusahaan. Data Anda aman, dan digunakan hanya untuk keperluan verifikasi kredit secara transparan.",
     formTitle: "Informasi Pribadi",
-    formSubtitle: "Trip Information",
+    formSubtitle: "Informasi kontak dan identitas",
   },
   {
     id: 2,
-    title: "Menilai Lebih dari Sekadar Angka",
-    subtitle: "Jawaban Anda akan membantu memperkuat Penilaian pengajuan kredit secara lebih menyeluruh.",
-    formTitle: "Informasi Pribadi",
-    formSubtitle: "Pilih Salah satu",
+    title: "Profil Perusahaan yang Komprehensif",
+    subtitle: "Memahami latar belakang dan profil perusahaan Anda untuk analisis yang lebih akurat.",
+    formTitle: "Company Profile",
+    formSubtitle: "Informasi dasar perusahaan",
   },
   {
     id: 3,
@@ -50,13 +54,29 @@ const steps = [
     subtitle:
       "SATRIA memahami bahwa setiap perusahaan memiliki kebutuhan pembiayaan yang unik. Dengan mengumpulkan data secara terstruktur sejak awal, sistem kami dapat mencocokkan skema pembiayaan yang tepat dengan profil risiko yang relevan.",
     formTitle: "Informasi Kredit",
-    formSubtitle: "",
+    formSubtitle: "Detail kebutuhan pembiayaan",
+  },
+  {
+    id: 4,
+    title: "Dari Dokumen Ke Data, Otomatis & Akurat",
+    subtitle: "SATRIA mengekstraksi informasi penting dari dokumen keuangan membantu mempercepat proses analisis risiko, memastikan keputusan kredit dibuat berdasarkan data aktual, bukan asumsi.",
+    formTitle: "Upload Dokumen",
+    formSubtitle: "Format yang diterima: PDF, JPG, PNG, XLSX. Maks. ukuran file: 15MB per dokumen.",
+  },
+  {
+    id: 5,
+    title: "Menilai Lebih dari Sekadar Angka",
+    subtitle: "Jawaban Anda akan membantu memperkuat Penilaian pengajuan kredit secara lebih menyeluruh.",
+    formTitle: "Asesmen Survei",
+    formSubtitle: "Pilih salah satu jawaban yang paling sesuai",
   },
 ]
 
 export default function MultiStepForm() {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [financialData, setFinancialData] = useState<Record<string, any>>({})
+  const [uploadStatus, setUploadStatus] = useState<Record<string, 'idle' | 'uploading' | 'success' | 'error'>>({})
 
   // Form instances for each step
   const personalForm = useForm<PersonalInfoForm>({
@@ -70,13 +90,16 @@ export default function MultiStepForm() {
     },
   })
 
-  const assessmentForm = useForm<AssessmentForm>({
-    resolver: zodResolver(assessmentSchema),
+  const companyForm = useForm<CompanyProfileForm>({
+    resolver: zodResolver(companyProfileSchema),
     defaultValues: {
-      operationalStability: undefined,
-      complianceLevel: undefined,
-      expansionPlans: undefined,
-      reputation: undefined,
+      companyName: "",
+      businessType: "",
+      establishedYear: "",
+      numberOfEmployees: "",
+      monthlyRevenue: "",
+      businessLocation: "",
+      businessDescription: "",
     },
   })
 
@@ -92,85 +115,372 @@ export default function MultiStepForm() {
     },
   })
 
+  const documentForm = useForm<DocumentUploadForm>({
+    resolver: zodResolver(documentUploadSchema),
+    defaultValues: {
+      balanceSheet: undefined,
+      incomeStatement: undefined,
+      cashFlowStatement: undefined,
+      financialReport: undefined,
+      collateralDocument: undefined,
+    },
+  })
+
+  const assessmentForm = useForm<AssessmentForm>({
+    resolver: zodResolver(assessmentSchema),
+    defaultValues: {
+      operationalStability: undefined,
+      complianceLevel: undefined,
+      expansionPlans: undefined,
+      reputation: undefined,
+    },
+  })
+
   const getCurrentForm = () => {
     switch (currentStep) {
       case 1:
         return personalForm
       case 2:
-        return assessmentForm
+        return companyForm
       case 3:
         return creditForm
+      case 4:
+        return documentForm
+      case 5:
+        return assessmentForm
       default:
         return personalForm
     }
   }
 
+  // Synthetic data generators
+  const generatePersonalData = () => {
+    const people = [
+      {
+        fullName: "Ahmad Syahril Ramadhan",
+        email: "ahmad.syahril@mitratekno.co.id",
+        phone: "081234567890",
+        position: "Chief Executive Officer",
+        gender: "male" as const
+      },
+      {
+        fullName: "Siti Nurhaliza Putri",
+        email: "siti.nurhaliza@sinarlogistik.com",
+        phone: "082345678901",
+        position: "Managing Director",
+        gender: "female" as const
+      },
+      {
+        fullName: "Budi Santoso Wijaya",
+        email: "budi.santoso@berkahmandiri.co.id",
+        phone: "083456789012",
+        position: "General Manager",
+        gender: "male" as const
+      },
+      {
+        fullName: "Maya Indira Sari",
+        email: "maya.indira@cahayakonstruksi.com",
+        phone: "084567890123",
+        position: "Chief Operating Officer",
+        gender: "female" as const
+      },
+      {
+        fullName: "Rizki Maulana Yusuf",
+        email: "rizki.maulana@sejahtera-agro.id",
+        phone: "085678901234",
+        position: "Direktur Utama",
+        gender: "male" as const
+      }
+    ]
+    
+    const randomPerson = people[Math.floor(Math.random() * people.length)]
+    personalForm.setValue("fullName", randomPerson.fullName)
+    personalForm.setValue("email", randomPerson.email)
+    personalForm.setValue("phone", randomPerson.phone)
+    personalForm.setValue("position", randomPerson.position)
+    personalForm.setValue("gender", randomPerson.gender)
+    
+    toast.success("Data simulasi personal berhasil diisi!")
+  }
+
+  const generateCompanyData = () => {
+    const companies = [
+      {
+        companyName: "PT. Mitra Teknologi Nusantara",
+        businessType: "technology",
+        establishedYear: "2019",
+        numberOfEmployees: "51-200",
+        monthlyRevenue: "500jt-1m",
+        businessLocation: "Jl. Gatot Subroto No. 45, Jakarta Selatan, DKI Jakarta 12930",
+        businessDescription: "Perusahaan pengembangan perangkat lunak yang fokus pada solusi digitalisasi untuk UKM dan korporasi. Kami menyediakan sistem manajemen bisnis, aplikasi mobile, dan layanan cloud computing dengan teknologi terdepan untuk meningkatkan efisiensi operasional klien."
+      },
+      {
+        companyName: "PT. Sinar Bahagia Logistik",
+        businessType: "logistics",
+        establishedYear: "2017",
+        numberOfEmployees: "201-500",
+        monthlyRevenue: "1-5m",
+        businessLocation: "Jl. Raya Bekasi Km. 23, Bekasi Timur, Jawa Barat 17113",
+        businessDescription: "Perusahaan jasa logistik dan distribusi yang melayani pengiriman domestik dan ekspor-impor. Memiliki armada lengkap dan gudang strategis di berbagai kota besar, dengan fokus pada layanan cepat, aman, dan terpercaya untuk e-commerce dan industri manufaktur."
+      },
+      {
+        companyName: "PT. Berkah Mandiri Trading",
+        businessType: "trading",
+        establishedYear: "2015",
+        numberOfEmployees: "11-50",
+        monthlyRevenue: "100-500jt",
+        businessLocation: "Jl. Malioboro No. 156, Yogyakarta, DIY 55271",
+        businessDescription: "Perusahaan perdagangan yang bergerak di bidang distribusi produk elektronik, peralatan rumah tangga, dan aksesoris gadget. Melayani retail modern, toko tradisional, dan penjualan online dengan jaringan supplier terpercaya di Asia."
+      },
+      {
+        companyName: "PT. Cahaya Konstruksi Prima",
+        businessType: "construction",
+        establishedYear: "2020",
+        numberOfEmployees: "51-200",
+        monthlyRevenue: "500jt-1m",
+        businessLocation: "Jl. Ahmad Yani No. 88, Surabaya, Jawa Timur 60234",
+        businessDescription: "Kontraktor konstruksi yang mengkhususkan diri pada pembangunan gedung komersial, perumahan, dan infrastruktur. Memiliki tim profesional bersertifikat dan peralatan modern untuk mengerjakan proyek skala menengah hingga besar dengan standar kualitas tinggi."
+      },
+      {
+        companyName: "PT. Sejahtera Agro Makmur",
+        businessType: "agriculture",
+        establishedYear: "2016",
+        numberOfEmployees: "101-500",
+        monthlyRevenue: "500jt-1m",
+        businessLocation: "Jl. Raya Bogor Km. 32, Cibinong, Bogor, Jawa Barat 16913",
+        businessDescription: "Perusahaan agribisnis yang bergerak dalam budidaya, pengolahan, dan distribusi produk pertanian organik. Memiliki lahan seluas 500 hektar dan fasilitas cold storage modern untuk menjamin kualitas produk sayuran, buah-buahan, dan beras organik."
+      }
+    ]
+    
+    const randomCompany = companies[Math.floor(Math.random() * companies.length)]
+    companyForm.setValue("companyName", randomCompany.companyName)
+    companyForm.setValue("businessType", randomCompany.businessType)
+    companyForm.setValue("establishedYear", randomCompany.establishedYear)
+    companyForm.setValue("numberOfEmployees", randomCompany.numberOfEmployees)
+    companyForm.setValue("monthlyRevenue", randomCompany.monthlyRevenue)
+    companyForm.setValue("businessLocation", randomCompany.businessLocation)
+    companyForm.setValue("businessDescription", randomCompany.businessDescription)
+    
+    toast.success("Data simulasi perusahaan berhasil diisi!")
+  }
+
+  const generateCreditData = () => {
+    const creditScenarios = [
+      {
+        financingPurpose: "Ekspansi usaha dengan membuka cabang baru di Jakarta dan Surabaya untuk meningkatkan market share",
+        amount: "1-2m",
+        tenor: "36 bulan",
+        financingType: "modal-kerja",
+        collateral: "Sertifikat tanah dan bangunan kantor pusat seluas 500m² dengan nilai estimasi Rp 2.5 miliar",
+        usagePlan: "Dana akan digunakan untuk sewa tempat usaha 30%, renovasi dan peralatan 40%, modal kerja awal 20%, dan marketing campaign 10% untuk memperkenalkan cabang baru kepada target market di kedua kota tersebut."
+      },
+      {
+        financingPurpose: "Pembelian armada truk dan sistem teknologi untuk meningkatkan kapasitas pengiriman logistik",
+        amount: "500jt-1m",
+        tenor: "48 bulan",
+        financingType: "investasi",
+        collateral: "BPKB kendaraan operasional existing senilai Rp 800 juta dan deposito berjangka Rp 200 juta",
+        usagePlan: "Pembelian 5 unit truk box 60%, implementasi sistem tracking GPS dan warehouse management system 25%, training karyawan 10%, dan working capital untuk operasional awal 5%."
+      },
+      {
+        financingPurpose: "Digitalisasi sistem penjualan dan pengembangan platform e-commerce untuk memperluas jangkauan pasar",
+        amount: "200-500jt",
+        tenor: "24 bulan",
+        financingType: "modal-kerja",
+        collateral: "Inventori barang dagangan senilai Rp 400 juta dan piutang usaha yang dapat diverifikasi",
+        usagePlan: "Pengembangan website dan aplikasi mobile 50%, integrasi sistem pembayaran digital 20%, digital marketing dan advertising 20%, training tim penjualan 10%."
+      },
+      {
+        financingPurpose: "Pembangunan fasilitas produksi baru dan modernisasi peralatan konstruksi untuk proyek skala besar",
+        amount: "2-5m",
+        tenor: "60 bulan",
+        financingType: "investasi",
+        collateral: "Tanah dan bangunan pabrik existing senilai Rp 8 miliar, mesin produksi senilai Rp 2 miliar",
+        usagePlan: "Pembangunan fasilitas baru 70%, pembelian alat berat dan crane 20%, working capital untuk operasional awal 10%."
+      },
+      {
+        financingPurpose: "Modernisasi sistem pertanian dan pengembangan cold storage untuk produk organik",
+        amount: "500jt-1m",
+        tenor: "36 bulan",
+        financingType: "investasi",
+        collateral: "Sertifikat lahan pertanian 500 hektar senilai Rp 1.5 miliar dan inventori produk organik",
+        usagePlan: "Pembangunan cold storage 50%, modernisasi sistem irigasi 30%, pembelian alat pertanian modern 20%."
+      }
+    ]
+    
+    const randomCredit = creditScenarios[Math.floor(Math.random() * creditScenarios.length)]
+    creditForm.setValue("financingPurpose", randomCredit.financingPurpose)
+    creditForm.setValue("amount", randomCredit.amount)
+    creditForm.setValue("tenor", randomCredit.tenor)
+    creditForm.setValue("financingType", randomCredit.financingType)
+    creditForm.setValue("collateral", randomCredit.collateral)
+    creditForm.setValue("usagePlan", randomCredit.usagePlan)
+    
+    toast.success("Data simulasi kredit berhasil diisi!")
+  }
+
+  // Navigation functions
   const nextStep = async () => {
     const currentForm = getCurrentForm()
     const isValid = await currentForm.trigger()
-
-    if (!isValid) {
-      toast.error("Mohon periksa kembali data yang Anda masukkan", { duration: 2000 })
-      return
-    }
-
-    if (currentStep < steps.length) {
-      setCurrentStep(currentStep + 1)
-      toast.success(`Step ${currentStep} berhasil diselesaikan`, { duration: 2000 })
+    
+    if (isValid) {
+      setCurrentStep(Math.min(currentStep + 1, steps.length))
+    } else {
+      toast.error("Mohon lengkapi semua field yang wajib diisi")
     }
   }
 
   const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
-    }
+    setCurrentStep(Math.max(currentStep - 1, 1))
   }
 
+  // Submit function
   const handleSubmit = async () => {
-    const isValid = await creditForm.trigger()
-
-    if (!isValid) {
-      toast.error("Mohon periksa kembali data yang Anda masukkan", { duration: 2000 })
-      return
-    }
-
     setIsSubmitting(true)
-
+    
     try {
-      const personalData = personalForm.getValues()
-      const assessmentData = assessmentForm.getValues()
-      const creditData = creditForm.getValues()
+      // Validate all forms
+      const validations = await Promise.all([
+        personalForm.trigger(),
+        companyForm.trigger(),
+        creditForm.trigger(),
+        documentForm.trigger(),
+        assessmentForm.trigger(),
+      ])
 
-      const formData = {
-        // Personal info
-        companyName: personalData.fullName + " Company", // Synthetic company name
+      if (!validations.every(Boolean)) {
+        toast.error("Mohon lengkapi semua field yang wajib diisi")
+        return
+      }
+
+      // Create form data
+      const formData = new FormData()
+      
+      // Collect all form data
+      const personalData = personalForm.getValues()
+      const companyData = companyForm.getValues()
+      const creditData = creditForm.getValues()
+      const assessmentData = assessmentForm.getValues()
+      const documentData = documentForm.getValues()
+
+      // Combine all data into application data object
+      const applicationData = {
+        // Personal data
         applicantName: personalData.fullName,
         email: personalData.email,
         phone: personalData.phone,
         position: personalData.position,
         gender: personalData.gender,
-
+        
+        // Company data
+        companyName: companyData.companyName,
+        businessType: companyData.businessType,
+        establishedYear: companyData.establishedYear,
+        numberOfEmployees: companyData.numberOfEmployees,
+        monthlyRevenue: companyData.monthlyRevenue,
+        businessLocation: companyData.businessLocation,
+        businessDescription: companyData.businessDescription,
+        
+        // Credit data
+        financingPurpose: creditData.financingPurpose,
+        amount: creditData.amount,
+        tenor: creditData.tenor,
+        financingType: creditData.financingType,
+        collateral: creditData.collateral,
+        usagePlan: creditData.usagePlan,
+        
         // Assessment data
         operationalStability: assessmentData.operationalStability,
         complianceLevel: assessmentData.complianceLevel,
         expansionPlans: assessmentData.expansionPlans,
         reputation: assessmentData.reputation,
-
-        // Credit info
-        financingPurpose: creditData.financingPurpose,
-        amount: creditData.amount, // Keep as string, will be converted in API
-        tenor: creditData.tenor,
-        financingType: creditData.financingType,
-        collateral: creditData.collateral,
-        usagePlan: creditData.usagePlan,
       }
 
-      const applicationId = await saveApplication(formData)
+      // Add the application data as JSON string
+      formData.append('applicationData', JSON.stringify(applicationData))
 
-      toast.success("Aplikasi berhasil disimpan dan sedang diproses!", { duration: 2000 })
+      // Debug: Log the application data being sent
+      console.log('📤 Submitting application data:', applicationData)
+      console.log('📄 FormData contents:', {
+        applicationData: JSON.stringify(applicationData),
+        hasBalanceSheet: documentData.balanceSheet instanceof File,
+        hasIncomeStatement: documentData.incomeStatement instanceof File,
+        hasCashFlowStatement: documentData.cashFlowStatement instanceof File,
+        hasFinancialReport: documentData.financialReport instanceof File,
+        hasCollateralDocument: documentData.collateralDocument instanceof File,
+        financialDataKeys: Object.keys(financialData)
+      })
+
+      // Add documents as separate files
+      if (documentData.balanceSheet instanceof File) {
+        formData.append('balanceSheet', documentData.balanceSheet)
+      }
+      if (documentData.incomeStatement instanceof File) {
+        formData.append('incomeStatement', documentData.incomeStatement)
+      }
+      if (documentData.cashFlowStatement instanceof File) {
+        formData.append('cashFlowStatement', documentData.cashFlowStatement)
+      }
+      if (documentData.financialReport instanceof File) {
+        formData.append('financialReport', documentData.financialReport)
+      }
+      if (documentData.collateralDocument instanceof File) {
+        formData.append('collateralDocument', documentData.collateralDocument)
+      }
+
+      // Add financial data if available
+      if (Object.keys(financialData).length > 0) {
+        formData.append('financialData', JSON.stringify(financialData))
+      }
+      // Submit to API
+      const response = await fetch('/api/applications', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        // Get more detailed error information
+        let errorMessage = 'Failed to submit application'
+        try {
+          const errorData = await response.json()
+          if (errorData.error) {
+            errorMessage = errorData.error
+          }
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        throw new Error(errorMessage)
+      }
+
+      const result = await response.json()
+
+      console.log('✅ Application submitted successfully:', result)
+      
+      // Show success message with details
+      if (result.data?.id) {
+        toast.success(`Aplikasi berhasil disimpan ke database dengan ID: ${result.data.id.substring(0, 8)}...`, { 
+          duration: 3000 
+        })
+      } else {
+        toast.success("Aplikasi berhasil disimpan dan sedang diproses!", { duration: 2000 })
+      }
+
+      // Log the stored data for verification
+      console.log('📊 Stored application data:', {
+        id: result.data?.id,
+        companyName: result.data?.companyName,
+        hasFinancialData: !!result.data?.extractedFinancialData,
+        financialDataKeys: result.data?.extractedFinancialData ? Object.keys(result.data.extractedFinancialData) : [],
+        createdAt: result.data?.createdAt
+      })
 
       // Reset forms
       personalForm.reset()
+      companyForm.reset()
+      creditForm.reset()
+      documentForm.reset()
       assessmentForm.reset()
       creditForm.reset()
       setCurrentStep(1)
@@ -216,6 +526,71 @@ export default function MultiStepForm() {
 
   const currentStepData = steps[currentStep - 1]
   const progress = (currentStep / steps.length) * 100
+
+  // Handle file upload with real-time processing
+  const handleFileUpload = async (fieldName: string, file: File) => {
+    if (!file) return
+
+    setUploadStatus(prev => ({ ...prev, [fieldName]: 'uploading' }))
+
+    try {
+      // Only use parseFinancialDocument for financial report
+      if (fieldName === 'financialReport') {
+        const { parseFinancialDocument } = await import('@/lib/backend-api-client')
+        const uploadResult = await parseFinancialDocument(file)
+        
+        if (uploadResult.success && uploadResult.data) {
+          setUploadStatus(prev => ({ ...prev, [fieldName]: 'success' }))
+          
+          // Debug logging
+          console.log('Financial parsing successful:', uploadResult.data)
+          
+          // Store financial data
+          setFinancialData(prev => ({
+            ...prev,
+            [fieldName]: uploadResult.data
+          }))
+          
+          // Debug: log the updated state
+          console.log('Updated financialData state will be:', {
+            ...financialData,
+            [fieldName]: uploadResult.data
+          })
+          
+          // Show feedback for incomplete data
+          if (uploadResult.data.hasIncompleteData) {
+            toast.warning(
+              `Parsing completed but some financial data is missing: ${uploadResult.data.missingFields.slice(0, 3).join(', ')}${uploadResult.data.missingFields.length > 3 ? '...' : ''}. Please review and fill in manually if needed.`,
+              { duration: 5000 }
+            )
+          } else {
+            const totalDocs = uploadResult.data.currentYear.length + uploadResult.data.previousYear.length
+            toast.success(`Financial report parsed successfully! ${totalDocs} documents processed.`, { duration: 3000 })
+          }
+        } else {
+          setUploadStatus(prev => ({ ...prev, [fieldName]: 'error' }))
+          console.error('Financial parsing failed:', uploadResult.error)
+          toast.error(`Failed to parse financial report: ${uploadResult.error}`, { duration: 3000 })
+        }
+      } else {
+        // For other documents, use regular upload
+        const { uploadToSarana } = await import('@/lib/backend-api-client')
+        const uploadResult = await uploadToSarana(file)
+        
+        if (uploadResult.success && uploadResult.data) {
+          setUploadStatus(prev => ({ ...prev, [fieldName]: 'success' }))
+          toast.success(`${fieldName} uploaded successfully!`, { duration: 2000 })
+        } else {
+          setUploadStatus(prev => ({ ...prev, [fieldName]: 'error' }))
+          toast.error(`Failed to upload ${fieldName}: ${uploadResult.error}`, { duration: 3000 })
+        }
+      }
+    } catch (error) {
+      setUploadStatus(prev => ({ ...prev, [fieldName]: 'error' }))
+      console.error(`Error uploading ${fieldName}:`, error)
+      toast.error(`Error uploading ${fieldName}: ${error instanceof Error ? error.message : 'Unknown error'}`, { duration: 3000 })
+    }
+  }
 
   return (
     <>
@@ -302,10 +677,7 @@ export default function MultiStepForm() {
                         key={tab}
                         className={cn(
                           "px-4 py-2 text-sm border-b-2 cursor-pointer whitespace-nowrap transition-colors",
-                          index + 1 === currentStep ||
-                            (index === 0 && currentStep === 1) ||
-                            (index === 1 && currentStep === 2) ||
-                            (index === 2 && currentStep === 3)
+                          index + 1 === currentStep
                             ? "text-[#0887A0] border-[#0887A0] font-medium"
                             : "text-gray-400 border-transparent hover:text-gray-600",
                         )}
@@ -323,6 +695,26 @@ export default function MultiStepForm() {
                   {currentStep === 1 && (
                     <Form {...personalForm}>
                       <form className="space-y-6">
+                        {/* Synthetic Data Button */}
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-green-800">👤 Data Simulasi</h4>
+                              <p className="text-sm text-green-600 mt-1">
+                                Gunakan data personal contoh untuk mempercepat pengisian form
+                              </p>
+                            </div>
+                            <Button 
+                              type="button"
+                              variant="outline"
+                              onClick={generatePersonalData}
+                              className="border-green-300 text-green-700 hover:bg-green-100"
+                            >
+                              Isi Data Simulasi
+                            </Button>
+                          </div>
+                        </div>
+
                         <FormField
                           control={personalForm.control}
                           name="fullName"
@@ -405,35 +797,146 @@ export default function MultiStepForm() {
                   )}
 
                   {currentStep === 2 && (
-                    <Form {...assessmentForm}>
+                    <Form {...companyForm}>
                       <form className="space-y-6">
+                        {/* Synthetic Data Button */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-blue-800">🎯 Data Simulasi</h4>
+                              <p className="text-sm text-blue-600 mt-1">
+                                Gunakan data perusahaan contoh untuk mempercepat pengisian form
+                              </p>
+                            </div>
+                            <Button 
+                              type="button"
+                              variant="outline"
+                              onClick={generateCompanyData}
+                              className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                            >
+                              Isi Data Simulasi
+                            </Button>
+                          </div>
+                        </div>
+
                         <FormField
-                          control={assessmentForm.control}
-                          name="operationalStability"
+                          control={companyForm.control}
+                          name="companyName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>
-                                Seberapa stabil operasional perusahaan Anda dalam 12 bulan terakhir? *
-                              </FormLabel>
+                              <FormLabel>Nama Perusahaan *</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} value={field.value}>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="sangat-stabil" id="sangat-stabil" />
-                                    <Label htmlFor="sangat-stabil">Sangat Stabil</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="cukup-stabil" id="cukup-stabil" />
-                                    <Label htmlFor="cukup-stabil">Cukup Stabil</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="tidak-stabil" id="tidak-stabil" />
-                                    <Label htmlFor="tidak-stabil">Tidak Stabil</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="tidak-tahu" id="tidak-tahu" />
-                                    <Label htmlFor="tidak-tahu">Tidak Tahu</Label>
-                                  </div>
-                                </RadioGroup>
+                                <Input placeholder="PT. Sinar Utama Logistik" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={companyForm.control}
+                            name="businessType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Jenis Usaha *</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Pilih jenis usaha" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="manufacturing">Manufaktur</SelectItem>
+                                    <SelectItem value="trading">Perdagangan</SelectItem>
+                                    <SelectItem value="services">Jasa</SelectItem>
+                                    <SelectItem value="logistics">Logistik</SelectItem>
+                                    <SelectItem value="construction">Konstruksi</SelectItem>
+                                    <SelectItem value="agriculture">Pertanian</SelectItem>
+                                    <SelectItem value="technology">Teknologi</SelectItem>
+                                    <SelectItem value="other">Lainnya</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={companyForm.control}
+                            name="establishedYear"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Tahun Berdiri *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="2018" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={companyForm.control}
+                            name="numberOfEmployees"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Jumlah Karyawan *</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Pilih jumlah karyawan" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="1-10">1-10 orang</SelectItem>
+                                    <SelectItem value="11-50">11-50 orang</SelectItem>
+                                    <SelectItem value="51-200">51-200 orang</SelectItem>
+                                    <SelectItem value="201-500">201-500 orang</SelectItem>
+                                    <SelectItem value="500+">Lebih dari 500 orang</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={companyForm.control}
+                            name="monthlyRevenue"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Estimasi Pendapatan Bulanan *</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Pilih range pendapatan" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="<100jt">Kurang dari Rp 100 juta</SelectItem>
+                                    <SelectItem value="100-500jt">Rp 100 juta - Rp 500 juta</SelectItem>
+                                    <SelectItem value="500jt-1m">Rp 500 juta - Rp 1 miliar</SelectItem>
+                                    <SelectItem value="1-5m">Rp 1 miliar - Rp 5 miliar</SelectItem>
+                                    <SelectItem value=">5m">Lebih dari Rp 5 miliar</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={companyForm.control}
+                          name="businessLocation"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Lokasi Usaha *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Jl. Sudirman No. 123, Jakarta Selatan" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -441,102 +944,17 @@ export default function MultiStepForm() {
                         />
 
                         <FormField
-                          control={assessmentForm.control}
-                          name="complianceLevel"
+                          control={companyForm.control}
+                          name="businessDescription"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>
-                                Bagaimana tingkat kepatuhan perusahaan terhadap regulasi dan pajak? *
-                              </FormLabel>
+                              <FormLabel>Deskripsi Usaha *</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} value={field.value}>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="selalu-patuh" id="selalu-patuh" />
-                                    <Label htmlFor="selalu-patuh">Selalu patuh dan teratur</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="patuh-kadang-terlambat" id="patuh-kadang-terlambat" />
-                                    <Label htmlFor="patuh-kadang-terlambat">Patuh namun kadang terlambat</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="sering-terlambat" id="sering-terlambat" />
-                                    <Label htmlFor="sering-terlambat">Sering terlambat atau bermasalah</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="tidak-tahu-2" id="tidak-tahu-2" />
-                                    <Label htmlFor="tidak-tahu-2">Tidak Tahu</Label>
-                                  </div>
-                                </RadioGroup>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={assessmentForm.control}
-                          name="expansionPlans"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>
-                                Apakah perusahaan Anda memiliki rencana ekspansi dalam 1-2 tahun ke depan? *
-                              </FormLabel>
-                              <FormControl>
-                                <RadioGroup onValueChange={field.onChange} value={field.value}>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="ya-strategi-jelas" id="ya-strategi-jelas" />
-                                    <Label htmlFor="ya-strategi-jelas">Ya, dengan strategi yang jelas</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="ya-tahap-awal" id="ya-tahap-awal" />
-                                    <Label htmlFor="ya-tahap-awal">Ya, namun masih dalam tahap awal</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="tidak-ada-rencana" id="tidak-ada-rencana" />
-                                    <Label htmlFor="tidak-ada-rencana">Tidak ada rencana ekspansi</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="tidak-tahu-3" id="tidak-tahu-3" />
-                                    <Label htmlFor="tidak-tahu-3">Tidak Tahu</Label>
-                                  </div>
-                                </RadioGroup>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={assessmentForm.control}
-                          name="reputation"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>
-                                Bagaimana reputasi perusahaan Anda di mata pelanggan atau mitra saat ini? *
-                              </FormLabel>
-                              <FormControl>
-                                <RadioGroup onValueChange={field.onChange} value={field.value}>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="sangat-baik" id="sangat-baik" />
-                                    <Label htmlFor="sangat-baik">
-                                      Sangat baik (direkomendasikan oleh banyak pihak)
-                                    </Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="baik-belum-terdokumentasi" id="baik-belum-terdokumentasi" />
-                                    <Label htmlFor="baik-belum-terdokumentasi">
-                                      Baik, meskipun belum terdokumentasi formal
-                                    </Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="pernah-keluhan" id="pernah-keluhan" />
-                                    <Label htmlFor="pernah-keluhan">Pernah mendapat keluhan besar</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="tidak-tahu-tidak-menilai" id="tidak-tahu-tidak-menilai" />
-                                    <Label htmlFor="tidak-tahu-tidak-menilai">Tidak tahu / Tidak bisa menilai</Label>
-                                  </div>
-                                </RadioGroup>
+                                <Textarea 
+                                  placeholder="Jelaskan secara singkat bidang usaha, produk/jasa yang ditawarkan, dan target pasar perusahaan Anda"
+                                  className="min-h-[100px]"
+                                  {...field} 
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -549,6 +967,26 @@ export default function MultiStepForm() {
                   {currentStep === 3 && (
                     <Form {...creditForm}>
                       <form className="space-y-6">
+                        {/* Synthetic Data Button */}
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-amber-800">💰 Data Simulasi</h4>
+                              <p className="text-sm text-amber-600 mt-1">
+                                Gunakan data kredit contoh untuk mempercepat pengisian form
+                              </p>
+                            </div>
+                            <Button 
+                              type="button"
+                              variant="outline"
+                              onClick={generateCreditData}
+                              className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                            >
+                              Isi Data Simulasi
+                            </Button>
+                          </div>
+                        </div>
+
                         <FormField
                           control={creditForm.control}
                           name="financingPurpose"
@@ -556,8 +994,9 @@ export default function MultiStepForm() {
                             <FormItem>
                               <FormLabel>Tujuan Pembiayaan *</FormLabel>
                               <FormControl>
-                                <Input
+                                <Textarea
                                   placeholder="Pembelian armada truk baru untuk ekspansi layanan logistik"
+                                  className="min-h-[80px]"
                                   {...field}
                                 />
                               </FormControl>
@@ -580,10 +1019,11 @@ export default function MultiStepForm() {
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="1000000000">Rp1.000.000.000</SelectItem>
-                                    <SelectItem value="2500000000">Rp2.500.000.000</SelectItem>
-                                    <SelectItem value="5000000000">Rp5.000.000.000</SelectItem>
-                                    <SelectItem value="10000000000">Rp10.000.000.000</SelectItem>
+                                    <SelectItem value="200-500jt">Rp 200 juta - Rp 500 juta</SelectItem>
+                                    <SelectItem value="500jt-1m">Rp 500 juta - Rp 1 miliar</SelectItem>
+                                    <SelectItem value="1-2m">Rp 1 miliar - Rp 2 miliar</SelectItem>
+                                    <SelectItem value="2-5m">Rp 2 miliar - Rp 5 miliar</SelectItem>
+                                    <SelectItem value=">5m">Lebih dari Rp 5 miliar</SelectItem>
                                   </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -619,9 +1059,9 @@ export default function MultiStepForm() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="leasing">Leasing</SelectItem>
-                                  <SelectItem value="kredit-investasi">Kredit Investasi</SelectItem>
-                                  <SelectItem value="kredit-modal-kerja">Kredit Modal Kerja</SelectItem>
+                                  <SelectItem value="modal-kerja">Modal Kerja</SelectItem>
+                                  <SelectItem value="investasi">Investasi</SelectItem>
+                                  <SelectItem value="multiguna">Multiguna</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -636,7 +1076,11 @@ export default function MultiStepForm() {
                             <FormItem>
                               <FormLabel>Jaminan yang Disediakan *</FormLabel>
                               <FormControl>
-                                <Input placeholder="5 unit truk Mitsubishi Fuso tahun 2022" {...field} />
+                                <Textarea
+                                  placeholder="5 unit truk Mitsubishi Fuso tahun 2022"
+                                  className="min-h-[80px]"
+                                  {...field}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -652,9 +1096,473 @@ export default function MultiStepForm() {
                               <FormControl>
                                 <Textarea
                                   placeholder="70% pembelian kendaraan, 30% modifikasi bak dan branding"
-                                  rows={3}
+                                  className="min-h-[100px]"
                                   {...field}
                                 />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </form>
+                    </Form>
+                  )}
+
+                  {currentStep === 4 && (
+                    <Form {...documentForm}>
+                      <form className="space-y-6">
+                        <div className="grid grid-cols-1 gap-6">
+                          <FormField
+                            control={documentForm.control}
+                            name="balanceSheet"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Neraca Keuangan (Balance Sheet) *</FormLabel>
+                                <FormControl>
+                                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-[#0887A0] transition-colors">
+                                    <input
+                                      type="file"
+                                      accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (file && file.size <= 15 * 1024 * 1024) {
+                                          field.onChange(file)
+                                          handleFileUpload('balanceSheet', file)
+                                        } else {
+                                          toast.error("File maksimal 15MB")
+                                        }
+                                      }}
+                                      className="w-full"
+                                      disabled={uploadStatus.balanceSheet === 'uploading'}
+                                    />
+                                    <p className="text-sm text-gray-500 mt-2">
+                                      Upload file neraca keuangan perusahaan. Format: PDF, JPG, PNG, XLSX. Max: 15MB
+                                    </p>
+                                    {uploadStatus.balanceSheet === 'uploading' && (
+                                      <div className="flex items-center gap-2 mt-2 text-blue-600">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                        <span className="text-sm">Processing financial data...</span>
+                                      </div>
+                                    )}
+                                    {uploadStatus.balanceSheet === 'success' && (
+                                      <div className="flex items-center gap-2 mt-2 text-green-600">
+                                        <span className="text-sm">✓ File uploaded and processed successfully</span>
+                                      </div>
+                                    )}
+                                    {uploadStatus.balanceSheet === 'error' && (
+                                      <div className="flex items-center gap-2 mt-2 text-red-600">
+                                        <span className="text-sm">✗ Upload failed</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={documentForm.control}
+                            name="incomeStatement"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Laporan Laba Rugi (Income Statement) *</FormLabel>
+                                <FormControl>
+                                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-[#0887A0] transition-colors">
+                                    <input
+                                      type="file"
+                                      accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (file && file.size <= 15 * 1024 * 1024) {
+                                          field.onChange(file)
+                                        } else {
+                                          toast.error("File maksimal 15MB")
+                                        }
+                                      }}
+                                      className="w-full"
+                                    />
+                                    <p className="text-sm text-gray-500 mt-2">
+                                      Upload laporan laba rugi perusahaan. Format: PDF, JPG, PNG, XLSX. Max: 15MB
+                                    </p>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={documentForm.control}
+                            name="cashFlowStatement"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Laporan Arus Kas (Cash Flow Statement) *</FormLabel>
+                                <FormControl>
+                                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-[#0887A0] transition-colors">
+                                    <input
+                                      type="file"
+                                      accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (file && file.size <= 15 * 1024 * 1024) {
+                                          field.onChange(file)
+                                        } else {
+                                          toast.error("File maksimal 15MB")
+                                        }
+                                      }}
+                                      className="w-full"
+                                    />
+                                    <p className="text-sm text-gray-500 mt-2">
+                                      Upload laporan arus kas perusahaan. Format: PDF, JPG, PNG, XLSX. Max: 15MB
+                                    </p>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={documentForm.control}
+                            name="financialReport"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Laporan Keuangan *</FormLabel>
+                                <FormControl>
+                                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-[#0887A0] transition-colors">
+                                    <input
+                                      type="file"
+                                      accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (file && file.size <= 15 * 1024 * 1024) {
+                                          field.onChange(file)
+                                          handleFileUpload('financialReport', file)
+                                        } else {
+                                          toast.error("File maksimal 15MB")
+                                        }
+                                      }}
+                                      className="w-full"
+                                      disabled={uploadStatus.financialReport === 'uploading'}
+                                    />
+                                    <p className="text-sm text-gray-500 mt-2">
+                                      Upload laporan keuangan lengkap untuk parsing otomatis. Format: PDF, JPG, PNG, XLSX. Max: 15MB
+                                    </p>
+                                    {uploadStatus.financialReport === 'uploading' && (
+                                      <div className="flex items-center gap-2 mt-2 text-blue-600">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                        <span className="text-sm">Parsing financial data...</span>
+                                      </div>
+                                    )}
+                                    {uploadStatus.financialReport === 'success' && (
+                                      <div className="flex items-center gap-2 mt-2 text-green-600">
+                                        <span className="text-sm">✓ Financial report parsed successfully</span>
+                                      </div>
+                                    )}
+                                    {uploadStatus.financialReport === 'error' && (
+                                      <div className="flex items-center gap-2 mt-2 text-red-600">
+                                        <span className="text-sm">✗ Parsing failed</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={documentForm.control}
+                            name="collateralDocument"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Dokumen Collateral *</FormLabel>
+                                <FormControl>
+                                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-[#0887A0] transition-colors">
+                                    <input
+                                      type="file"
+                                      accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (file && file.size <= 15 * 1024 * 1024) {
+                                          field.onChange(file)
+                                        } else {
+                                          toast.error("File maksimal 15MB")
+                                        }
+                                      }}
+                                      className="w-full"
+                                    />
+                                    <p className="text-sm text-gray-500 mt-2">
+                                      Upload dokumen jaminan (sertifikat, BPKB, dll). Format: PDF, JPG, PNG, XLSX. Max: 15MB
+                                    </p>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        {/* Debug: Show financialData state */}
+                        {process.env.NODE_ENV === 'development' && (
+                          <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+                            <h4 className="font-medium text-gray-800 mb-2">Debug: Financial Data State</h4>
+                            <pre className="text-xs text-gray-600 overflow-auto max-h-32">
+                              {JSON.stringify(financialData, null, 2)}
+                            </pre>
+                            <p className="text-xs text-gray-500 mt-2">
+                              Keys count: {Object.keys(financialData).length}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Financial Data Display */}
+                        {Object.keys(financialData).length > 0 && (
+                          <div className="mt-8 space-y-4">
+                            <h3 className="text-lg font-semibold text-[#0887A0] border-b border-gray-200 pb-2">
+                              📊 Extracted Financial Data
+                            </h3>
+                            {Object.entries(financialData).map(([fieldName, data]) => (
+                              <FinancialDataDisplay 
+                                key={fieldName}
+                                data={data} 
+                                fileName={fieldName}
+                              />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Test button to add dummy financial data */}
+                        {process.env.NODE_ENV === 'development' && (
+                          <div className="mt-4 space-y-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                const dummyData = {
+                                  currentYear: [
+                                    {
+                                      fileName: "Test Financial Report 2024.pdf",
+                                      financialMetrics: {
+                                        totalAssets: 5000000000,
+                                        totalLiabilities: 2000000000,
+                                        totalEquity: 3000000000,
+                                        netRevenue: 8000000000,
+                                        netIncome: 500000000,
+                                        currentAssets: 2000000000,
+                                        currentLiabilities: 1000000000,
+                                        grossProfit: 2000000000,
+                                        costOfGoodsSold: 6000000000
+                                      }
+                                    }
+                                  ],
+                                  previousYear: [],
+                                  hasIncompleteData: false,
+                                  missingFields: []
+                                }
+                                setFinancialData(prev => ({
+                                  ...prev,
+                                  testData: dummyData
+                                }))
+                                toast.success("Dummy financial data added for testing!")
+                              }}
+                              className="text-xs mr-2"
+                            >
+                              🧪 Add Test Financial Data
+                            </Button>
+                            
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={async () => {
+                                const { checkSaranaHealth } = await import('@/lib/backend-api-client')
+                                const health = await checkSaranaHealth()
+                                console.log('SARANA Health Check:', health)
+                                if (health.healthy) {
+                                  toast.success(`SARANA API is healthy! (${health.endpoint})`)
+                                } else {
+                                  toast.error(`SARANA API is not healthy: ${health.error}`)
+                                }
+                              }}
+                              className="text-xs mr-2"
+                            >
+                              🏥 Test SARANA Connection
+                            </Button>
+                            
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setFinancialData({})
+                                toast.info("Financial data cleared!")
+                              }}
+                              className="text-xs"
+                            >
+                              🗑️ Clear Data
+                            </Button>
+                            
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch('/api/applications')
+                                  const result = await response.json()
+                                  if (result.success) {
+                                    toast.success(`Found ${result.data.length} applications in Firestore!`)
+                                    console.log('Firestore applications:', result.data)
+                                  } else {
+                                    toast.error(`Firestore error: ${result.error}`)
+                                  }
+                                } catch (error) {
+                                  console.error('Test failed:', error)
+                                  toast.error('Failed to connect to Firestore')
+                                }
+                              }}
+                              className="text-xs"
+                            >
+                              🔍 Test Firestore
+                            </Button>
+                          </div>
+                        )}
+                      </form>
+                    </Form>
+                  )}
+
+                  {currentStep === 5 && (
+                    <Form {...assessmentForm}>
+                      <form className="space-y-6">
+                        <FormField
+                          control={assessmentForm.control}
+                          name="operationalStability"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                Seberapa stabil operasional perusahaan Anda dalam 12 bulan terakhir? *
+                              </FormLabel>
+                              <FormControl>
+                                <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-3">
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="sangat-stabil" id="sangat-stabil" />
+                                    <Label htmlFor="sangat-stabil" className="font-normal">Sangat Stabil</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="cukup-stabil" id="cukup-stabil" />
+                                    <Label htmlFor="cukup-stabil" className="font-normal">Cukup Stabil</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="tidak-stabil" id="tidak-stabil" />
+                                    <Label htmlFor="tidak-stabil" className="font-normal">Tidak Stabil</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="tidak-tahu" id="tidak-tahu" />
+                                    <Label htmlFor="tidak-tahu" className="font-normal">Tidak Tahu</Label>
+                                  </div>
+                                </RadioGroup>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={assessmentForm.control}
+                          name="complianceLevel"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                Bagaimana tingkat kepatuhan perusahaan terhadap regulasi dan pajak? *
+                              </FormLabel>
+                              <FormControl>
+                                <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-3">
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="selalu-patuh" id="selalu-patuh" />
+                                    <Label htmlFor="selalu-patuh" className="font-normal">Selalu patuh dan teratur</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="patuh-kadang-terlambat" id="patuh-kadang-terlambat" />
+                                    <Label htmlFor="patuh-kadang-terlambat" className="font-normal">Patuh namun kadang terlambat</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="sering-terlambat" id="sering-terlambat" />
+                                    <Label htmlFor="sering-terlambat" className="font-normal">Sering terlambat atau bermasalah</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="tidak-tahu-2" id="tidak-tahu-2" />
+                                    <Label htmlFor="tidak-tahu-2" className="font-normal">Tidak Tahu</Label>
+                                  </div>
+                                </RadioGroup>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={assessmentForm.control}
+                          name="expansionPlans"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                Apakah perusahaan Anda memiliki rencana ekspansi dalam 1-2 tahun ke depan? *
+                              </FormLabel>
+                              <FormControl>
+                                <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-3">
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="ya-strategi-jelas" id="ya-strategi-jelas" />
+                                    <Label htmlFor="ya-strategi-jelas" className="font-normal">Ya, dengan strategi yang jelas</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="ya-tahap-awal" id="ya-tahap-awal" />
+                                    <Label htmlFor="ya-tahap-awal" className="font-normal">Ya, namun masih dalam tahap awal</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="tidak-ada-rencana" id="tidak-ada-rencana" />
+                                    <Label htmlFor="tidak-ada-rencana" className="font-normal">Tidak ada rencana ekspansi</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="tidak-tahu-3" id="tidak-tahu-3" />
+                                    <Label htmlFor="tidak-tahu-3" className="font-normal">Tidak Tahu</Label>
+                                  </div>
+                                </RadioGroup>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={assessmentForm.control}
+                          name="reputation"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                Bagaimana reputasi perusahaan Anda di mata pelanggan atau mitra saat ini? *
+                              </FormLabel>
+                              <FormControl>
+                                <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-3">
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="sangat-baik" id="sangat-baik" />
+                                    <Label htmlFor="sangat-baik" className="font-normal">
+                                      Sangat baik (direkomendasikan oleh banyak pihak)
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="baik-belum-terdokumentasi" id="baik-belum-terdokumentasi" />
+                                    <Label htmlFor="baik-belum-terdokumentasi" className="font-normal">
+                                      Baik, meskipun belum terdokumentasi formal
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="pernah-keluhan" id="pernah-keluhan" />
+                                    <Label htmlFor="pernah-keluhan" className="font-normal">Pernah mendapat keluhan besar</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="tidak-tahu-tidak-menilai" id="tidak-tahu-tidak-menilai" />
+                                    <Label htmlFor="tidak-tahu-tidak-menilai" className="font-normal">Tidak tahu / Tidak bisa menilai</Label>
+                                  </div>
+                                </RadioGroup>
                               </FormControl>
                               <FormMessage />
                             </FormItem>

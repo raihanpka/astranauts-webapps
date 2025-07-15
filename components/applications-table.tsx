@@ -6,10 +6,44 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CheckCircle, XCircle, Clock, Search, Filter } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import type { CreditApplication } from "@/lib/types"
 
 export default function ApplicationsTable() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [applications, setApplications] = useState<CreditApplication[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch applications from API
+  useEffect(() => {
+    async function fetchApplications() {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/applications')
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+        
+        const result = await response.json()
+        
+        if (result.success) {
+          setApplications(result.data)
+          console.log(`✅ Loaded ${result.data.length} applications from Firestore`)
+        } else {
+          throw new Error(result.error || 'Failed to fetch applications')
+        }
+      } catch (err) {
+        console.error('❌ Error fetching applications:', err)
+        setError(err instanceof Error ? err.message : 'Unknown error')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchApplications()
+  }, [])
 
   const textToSlug = (text: string) => {
     return text
@@ -25,7 +59,30 @@ export default function ApplicationsTable() {
       .replace(/[^\w-]+/g, "")
   }
 
-  const allApplications = [
+  // Format date for display
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    }).format(new Date(date))
+  }
+
+  // Format currency
+  const formatCurrency = (amount: string | number) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+    if (isNaN(numAmount)) return amount.toString()
+    
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(numAmount)
+  }
+
+  // Default applications for fallback
+  const defaultApplications = [
     {
       name: "PT Andalan Niaga",
       date: "10 Juni 2025",
@@ -108,9 +165,37 @@ export default function ApplicationsTable() {
     },
   ]
 
-  const filteredApplications = allApplications.filter((app) =>
-    app.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  // Use real applications if available, fallback to default
+  const allApplications = applications.length > 0 ? applications : defaultApplications
+
+  const filteredApplications = allApplications.filter((app: any) => {
+    const name = app.companyName || app.name || ''
+    return name.toLowerCase().includes(searchTerm.toLowerCase())
+  })
+
+  // Convert Firestore applications to display format
+  const displayApplications = filteredApplications.map((app: any) => {
+    if (app.companyName) {
+      // This is a Firestore application
+      return {
+        name: app.companyName,
+        date: formatDate(app.createdAt),
+        amount: formatCurrency(app.amount),
+        creditRisk: app.riskLevel || "sedang",
+        externalRisk: app.riskLevel || "sedang", 
+        status: app.status,
+        slug: textToSlug(app.companyName),
+        dateSlug: textToSlug(formatDate(app.createdAt)),
+        id: app.id,
+        applicantName: app.applicantName,
+        hasFinancialData: !!app.extractedFinancialData,
+        financialDataCount: app.extractedFinancialData ? Object.keys(app.extractedFinancialData).length : 0
+      }
+    } else {
+      // This is a default application (fallback)
+      return app
+    }
+  })
 
   const getRiskBadge = (risk: string) => {
     switch (risk) {
@@ -169,7 +254,49 @@ export default function ApplicationsTable() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      {/* Debug info in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">🔍 Debug Info</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xs space-y-1">
+              <p>Loading: {loading ? 'Yes' : 'No'}</p>
+              <p>Error: {error || 'None'}</p>
+              <p>Applications from Firestore: {applications.length}</p>
+              <p>Total displayed: {displayApplications.length}</p>
+              <p>Applications with financial data: {applications.filter(app => app.extractedFinancialData).length}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading applications...</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="text-red-600 mb-4">❌ Error</div>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Main Table */}
+      {!loading && !error && (
+        <>
+          <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Semua Pengajuan Kredit</CardTitle>
@@ -205,7 +332,7 @@ export default function ApplicationsTable() {
                 </tr>
               </thead>
               <tbody>
-                {filteredApplications.map((app, index) => (
+                {displayApplications.map((app: any, index: number) => (
                   <tr key={index} className="border-b hover:bg-gray-50">
                     <td className="py-4 px-2">
                       <div className="flex items-center space-x-3">
@@ -235,13 +362,15 @@ export default function ApplicationsTable() {
             </table>
           </div>
 
-          {filteredApplications.length === 0 && (
+          {displayApplications.length === 0 && !loading && (
             <div className="text-center py-8">
               <p className="text-gray-500">Tidak ada pengajuan yang ditemukan</p>
             </div>
           )}
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   )
 }

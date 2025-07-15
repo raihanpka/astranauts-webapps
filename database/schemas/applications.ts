@@ -1,5 +1,5 @@
 // Applications Collection Schema
-import type { FirebaseFirestore } from "firebase-admin/firestore"
+import { Timestamp } from "firebase-admin/firestore"
 
 export interface ApplicationDocument {
   // Document ID: auto-generated
@@ -29,9 +29,9 @@ export interface ApplicationDocument {
 
   // System Fields
   status: "pending" | "processing" | "approved" | "rejected"
-  createdAt: FirebaseFirestore.Timestamp
-  updatedAt: FirebaseFirestore.Timestamp
-  processedAt?: FirebaseFirestore.Timestamp
+  createdAt: Timestamp
+  updatedAt: Timestamp
+  processedAt?: Timestamp
 
   // Analysis Results
   riskScore?: number
@@ -47,7 +47,7 @@ export interface ApplicationDocument {
     depi: number
     mScore: number
     altmanZScore: number
-    calculatedAt: FirebaseFirestore.Timestamp
+    calculatedAt: Timestamp
   }
 
   // Sentiment Analysis (SETIA Results)
@@ -61,7 +61,7 @@ export interface ApplicationDocument {
       sentiment: "positive" | "negative" | "neutral"
       source: string
     }>
-    analyzedAt: FirebaseFirestore.Timestamp
+    analyzedAt: Timestamp
   }
 
   // Document References
@@ -71,7 +71,7 @@ export interface ApplicationDocument {
   auditTrail: Array<{
     action: string
     userId: string
-    timestamp: FirebaseFirestore.Timestamp
+    timestamp: Timestamp
     details?: any
   }>
 }
